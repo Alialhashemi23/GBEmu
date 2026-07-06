@@ -1,9 +1,11 @@
+using GBEmu.Core;
 using GBEmu.Core.Cartridge;
 
-if (args.Length != 1)
+if (args.Length < 1)
 {
-    Console.Error.WriteLine("Usage: gbemu <rom.gb>");
-    Console.Error.WriteLine("Prints the cartridge header of a Game Boy ROM.");
+    Console.Error.WriteLine("Usage: gbemu <rom.gb>                 print the cartridge header");
+    Console.Error.WriteLine("       gbemu <rom.gb> --run [--max-cycles N]");
+    Console.Error.WriteLine("                                      run headless, stream serial output");
     return 2;
 }
 
@@ -29,6 +31,9 @@ catch (InvalidRomException ex)
     return 1;
 }
 
+if (args.Contains("--run"))
+    return RunHeadless(rom, args);
+
 Console.WriteLine($"File:            {Path.GetFileName(args[0])} ({rom.Length:N0} bytes)");
 Console.WriteLine($"Title:           {header.Title}");
 Console.WriteLine($"Cartridge type:  {header.CartridgeType} (mapper: {header.CartridgeType.Mapper()})");
@@ -49,3 +54,40 @@ if (!header.HeaderChecksumValid)
 }
 
 return 0;
+
+// Runs the machine with serial output streamed to stdout. Exits 0 when the
+// ROM prints "Passed" (Blargg convention), 1 on "Failed" or budget exhaustion.
+static int RunHeadless(byte[] rom, string[] args)
+{
+    long maxCycles = 2_000_000_000;
+    int maxIndex = Array.IndexOf(args, "--max-cycles");
+    if (maxIndex >= 0 && maxIndex + 1 < args.Length)
+        maxCycles = long.Parse(args[maxIndex + 1]);
+
+    var gb = new GameBoy(rom);
+    var received = new System.Text.StringBuilder();
+    int verdict = -1;
+    gb.Bus.SerialByteTransferred += b =>
+    {
+        Console.Write((char)b);
+        received.Append((char)b);
+        if (b == 'd') // last letter of both "Passed" and "Failed"
+        {
+            string text = received.ToString();
+            if (text.EndsWith("Passed")) verdict = 0;
+            else if (text.EndsWith("Failed")) verdict = 1;
+        }
+    };
+
+    long total = 0;
+    while (verdict < 0 && total < maxCycles)
+        total += gb.Step();
+
+    if (verdict >= 0)
+    {
+        Console.WriteLine();
+        return verdict;
+    }
+    Console.Error.WriteLine($"\n[no verdict after {total} T-cycles]");
+    return 1;
+}

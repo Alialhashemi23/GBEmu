@@ -6,19 +6,26 @@ namespace GBEmu.Core;
 /// DIV is the high byte of a free-running 16-bit counter. TIMA increments on
 /// the falling edge of one counter bit (selected by TAC) ANDed with the TAC
 /// enable — modelling it this way makes the classic quirks (DIV-write causing
-/// a TIMA tick, TAC frequency changes glitching) fall out naturally.
-/// The 4-cycle TIMA reload delay after overflow is not yet modelled.
+/// a TIMA tick, TAC changes glitching) fall out naturally.
+///
+/// TIMA overflow behaviour: the counter reads 0x00 for 4 T-cycles, then TMA
+/// is loaded and the interrupt is requested. Writing TIMA during those 4
+/// cycles cancels the reload; during the 4 cycles after the reload, TIMA
+/// writes are ignored and TMA writes propagate into TIMA.
 /// </summary>
 public sealed class GbTimer
 {
-    private ushort _counter = 0xABCC; // post-boot DIV value (DIV reads 0xAB)
+    private ushort _counter = 0xABCC; // post-boot value (DIV reads 0xAB)
     private bool _lastSignal;
+
+    private int _reloadCountdown = -1; // T-cycles until reload; -1 = idle
+    private int _reloadedWindow;       // T-cycles left in the just-reloaded window
 
     public byte Tima;
     public byte Tma;
     private byte _tac = 0xF8;
 
-    /// <summary>Set when TIMA overflows; the bus owner transfers this into IF bit 2.</summary>
+    /// <summary>Set when the overflow reload fires; the bus transfers this into IF bit 2.</summary>
     public bool InterruptRequested;
 
     public byte Div => (byte)(_counter >> 8);
@@ -37,11 +44,20 @@ public sealed class GbTimer
         switch (address)
         {
             case 0xFF04:
-                _counter = 0; // any write resets DIV
+                _counter = 0; // any write resets DIV (may itself tick TIMA via the edge)
                 UpdateEdge();
                 break;
-            case 0xFF05: Tima = value; break;
-            case 0xFF06: Tma = value; break;
+            case 0xFF05:
+                if (_reloadedWindow > 0)
+                    break; // write ignored in the cycle window right after reload
+                Tima = value;
+                _reloadCountdown = -1; // a write during the delay cancels the reload
+                break;
+            case 0xFF06:
+                Tma = value;
+                if (_reloadedWindow > 0)
+                    Tima = value; // reload window forwards TMA writes into TIMA
+                break;
             case 0xFF07:
                 _tac = (byte)(value | 0xF8);
                 UpdateEdge();
@@ -53,6 +69,14 @@ public sealed class GbTimer
     {
         for (int i = 0; i < tCycles; i++)
         {
+            if (_reloadedWindow > 0)
+                _reloadedWindow--;
+            if (_reloadCountdown >= 0 && --_reloadCountdown < 0)
+            {
+                Tima = Tma;
+                InterruptRequested = true;
+                _reloadedWindow = 4;
+            }
             _counter++;
             UpdateEdge();
         }
@@ -61,14 +85,8 @@ public sealed class GbTimer
     private void UpdateEdge()
     {
         bool signal = (_tac & 0x04) != 0 && (_counter & SelectedBitMask()) != 0;
-        if (_lastSignal && !signal)
-        {
-            if (++Tima == 0)
-            {
-                Tima = Tma;
-                InterruptRequested = true;
-            }
-        }
+        if (_lastSignal && !signal && ++Tima == 0)
+            _reloadCountdown = 3; // fires on the 4th T-cycle after the overflow
         _lastSignal = signal;
     }
 

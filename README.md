@@ -2,10 +2,13 @@
 
 A Game Boy (DMG) emulator written in C# / .NET 8.
 
-**Status: Phase 1 complete** — the SM83 CPU core passes the full
-[SingleStepTests sm83](https://github.com/SingleStepTests/sm83) suite
-(500 opcodes × 1000 cases) and all 11 of Blargg's `cpu_instrs` test ROMs.
-See [PLAN.md](PLAN.md) for the full build plan and roadmap.
+**Status: Phase 2 complete** — full DMG memory map with MBC1/2/3/5 mappers and
+a cycle-accurate timer, with peripherals ticked per machine cycle. Passing:
+the [SingleStepTests sm83](https://github.com/SingleStepTests/sm83) suite
+(500 opcodes × 1000 cases), Blargg `cpu_instrs` (individual + combined),
+`instr_timing`, `mem_timing`, and the Mooneye timer + MBC1/2/5 suites
+(12/13 timer tests; `rapid_toggle` needs fetch/execute overlap — deferred to
+the Phase 6 accuracy pass). See [PLAN.md](PLAN.md) for the roadmap.
 
 ## Layout
 

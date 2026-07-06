@@ -37,6 +37,17 @@ public sealed partial class Sm83
     private bool _haltBug;
     private int _cycles;
 
+    /// <summary>
+    /// Ticks peripherals by the given T-cycles. Called twice per machine
+    /// cycle, splitting the 4 T-cycles around the bus access so peripherals
+    /// advance mid-instruction — required by the stricter timing tests
+    /// (mem_timing, Mooneye). The split is defined by <see cref="AccessTCycle"/>.
+    /// </summary>
+    public Action<int>? Tick;
+
+    /// <summary>How many T-cycles of a machine cycle elapse before the bus access lands.</summary>
+    public const int AccessTCycle = 4;
+
     public Sm83(IBus bus)
     {
         _bus = bus;
@@ -185,16 +196,27 @@ public sealed partial class Sm83
     private byte ReadByte(ushort address)
     {
         _cycles += 4;
-        return _bus.Read(address);
+        Tick?.Invoke(AccessTCycle);
+        byte value = _bus.Read(address);
+        if (AccessTCycle < 4)
+            Tick?.Invoke(4 - AccessTCycle);
+        return value;
     }
 
     private void WriteByte(ushort address, byte value)
     {
         _cycles += 4;
+        Tick?.Invoke(AccessTCycle);
         _bus.Write(address, value);
+        if (AccessTCycle < 4)
+            Tick?.Invoke(4 - AccessTCycle);
     }
 
-    private void InternalCycle() => _cycles += 4;
+    private void InternalCycle()
+    {
+        _cycles += 4;
+        Tick?.Invoke(4);
+    }
 
     private void Push16(ushort value)
     {

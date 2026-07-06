@@ -7,6 +7,7 @@ public static class TestData
 
     public static string Sm83Dir => Path.Combine(Root, "sm83");
     public static string CpuInstrsDir => Path.Combine(Root, "cpu_instrs", "individual");
+    public static string MooneyeDir => Path.Combine(Root, "mooneye");
 
     private static string Locate()
     {
@@ -38,5 +39,15 @@ public sealed class BlarggRomTheoryAttribute : TheoryAttribute
     {
         if (!Directory.Exists(TestData.CpuInstrsDir))
             Skip = "Blargg ROMs not found — run scripts/fetch-test-data.sh";
+    }
+}
+
+/// <summary>Theory that is skipped when the Mooneye test ROMs are absent.</summary>
+public sealed class MooneyeRomTheoryAttribute : TheoryAttribute
+{
+    public MooneyeRomTheoryAttribute()
+    {
+        if (!Directory.Exists(TestData.MooneyeDir))
+            Skip = "Mooneye ROMs not found — run scripts/fetch-test-data.sh";
     }
 }

@@ -105,7 +105,7 @@ The SM83 core: 8 registers (AF/BC/DE/HL as pairs), SP, PC, flags Z/N/H/C.
 
 *Milestone: all 11 `cpu_instrs` sub-tests pass headlessly in CI.*
 
-### Phase 2 — Memory, Timer, Interrupt plumbing (2–3 days)
+### Phase 2 — Memory, Timer, Interrupt plumbing (2–3 days) — ✅ done
 - Full memory map: ROM banks, VRAM, WRAM, echo RAM, OAM, I/O registers, HRAM.
 - MBC1 first (Tetris is ROM-only, Mario Land is MBC1). MBC3 (+RTC stub) and
   MBC5 later; MBC2 last.

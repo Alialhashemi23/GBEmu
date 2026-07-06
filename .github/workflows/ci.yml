@@ -19,7 +19,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: tests/data
-          key: test-data-v1 # bump to refetch Blargg ROMs / sm83 JSON suite
+          key: test-data-v2 # bump to refetch/rebuild the third-party test suites
 
       - name: Fetch test data
         run: ./scripts/fetch-test-data.sh
