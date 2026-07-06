@@ -79,12 +79,12 @@ GBEmu.sln
 
 ## 4. Build Phases
 
-### Phase 0 — Skeleton (half a day)
+### Phase 0 — Skeleton (half a day) — ✅ done
 - Solution + projects + CI (GitHub Actions: build + test on push).
 - Cartridge header parsing: title, MBC type, ROM/RAM size, checksum.
 - CLI that loads a ROM and dumps its header. *Milestone: `dotnet run -- rom.gb` prints header info.*
 
-### Phase 1 — CPU (the big one, ~1–2 weeks)
+### Phase 1 — CPU (the big one, ~1–2 weeks) — ✅ done
 The SM83 core: 8 registers (AF/BC/DE/HL as pairs), SP, PC, flags Z/N/H/C.
 
 - Implement all 245 base opcodes + 256 CB-prefixed opcodes. Generate or

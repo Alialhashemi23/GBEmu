@@ -13,6 +13,9 @@ artifacts/
 TestResults/
 *.trx
 
+# Third-party test suites, fetched by scripts/fetch-test-data.sh
+tests/data/
+
 # Emulator runtime files
 *.sav
 *.state

@@ -15,6 +15,15 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
+      - name: Cache test data
+        uses: actions/cache@v4
+        with:
+          path: tests/data
+          key: test-data-v1 # bump to refetch Blargg ROMs / sm83 JSON suite
+
+      - name: Fetch test data
+        run: ./scripts/fetch-test-data.sh
+
       - name: Restore
         run: dotnet restore
 

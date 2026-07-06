@@ -2,7 +2,9 @@
 
 A Game Boy (DMG) emulator written in C# / .NET 8.
 
-**Status: Phase 0** — project skeleton, cartridge header parsing, CLI ROM inspector.
+**Status: Phase 1 complete** — the SM83 CPU core passes the full
+[SingleStepTests sm83](https://github.com/SingleStepTests/sm83) suite
+(500 opcodes × 1000 cases) and all 11 of Blargg's `cpu_instrs` test ROMs.
 See [PLAN.md](PLAN.md) for the full build plan and roadmap.
 
 ## Layout
@@ -27,9 +29,12 @@ Prints the cartridge header: title, mapper, ROM/RAM size, battery, checksums.
 ## Development
 
 ```sh
+./scripts/fetch-test-data.sh   # one-time: Blargg ROMs + sm83 JSON suite (~160 MB)
 dotnet build
 dotnet test
 ```
 
-CI runs build + tests on every push. Commercial ROMs are never committed to
-this repository (`*.gb`/`*.gbc` are gitignored).
+Tests that depend on the fetched data are skipped (not failed) when it is
+absent. CI fetches and caches the data, so the full suite always runs there.
+Commercial ROMs are never committed to this repository (`*.gb`/`*.gbc` are
+gitignored).
