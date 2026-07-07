@@ -24,4 +24,28 @@ public sealed class GameBoy
 
     /// <summary>Executes one instruction (or interrupt dispatch); returns T-cycles consumed.</summary>
     public int Step() => Cpu.Step();
+
+    public Graphics.Ppu Ppu => Bus.Ppu;
+    public Joypad Joypad => Bus.Joypad;
+
+    /// <summary>
+    /// Runs until the PPU completes a frame (~70224 T-cycles). With the LCD
+    /// off, runs one frame's worth of cycles so callers still make progress.
+    /// </summary>
+    public void RunFrame()
+    {
+        const int frameCycles = 70224;
+        Bus.Ppu.FrameReady = false;
+
+        long budget = frameCycles * 2; // safety margin; LCD-off never sets FrameReady
+        long spent = 0;
+        while (!Bus.Ppu.FrameReady && spent < budget)
+        {
+            spent += Step();
+            if (spent >= frameCycles && !LcdOn())
+                return;
+        }
+    }
+
+    private bool LcdOn() => (Bus.Ppu.ReadRegister(0xFF40) & 0x80) != 0;
 }

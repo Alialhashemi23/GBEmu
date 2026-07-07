@@ -47,4 +47,17 @@ else
     echo "Mooneye ROMs already present."
 fi
 
+# dmg-acid2 is built with RGBDS v0.5.2 (the source predates current syntax).
+if [ ! -d "$data_dir/acid2" ]; then
+    echo "Building dmg-acid2 from source (needs bison + libpng-dev + cc)..."
+    git clone --branch v0.5.2 --depth 1 https://github.com/gbdev/rgbds.git "$tmp_dir/rgbds"
+    make -C "$tmp_dir/rgbds" -j"$(nproc)" >/dev/null
+    git clone --depth 1 --recurse-submodules https://github.com/mattcurrie/dmg-acid2.git "$tmp_dir/dmg-acid2"
+    PATH="$tmp_dir/rgbds:$PATH" make -C "$tmp_dir/dmg-acid2" >/dev/null
+    mkdir -p "$data_dir/acid2"
+    cp "$tmp_dir/dmg-acid2/build/dmg-acid2.gb" "$data_dir/acid2/"
+else
+    echo "dmg-acid2 already present."
+fi
+
 echo "Done. Test data in $data_dir"

@@ -2,32 +2,37 @@
 
 A Game Boy (DMG) emulator written in C# / .NET 8.
 
-**Status: Phase 2 complete** — full DMG memory map with MBC1/2/3/5 mappers and
-a cycle-accurate timer, with peripherals ticked per machine cycle. Passing:
+**Status: Phase 3 complete** — the PPU renders
+[dmg-acid2](https://github.com/mattcurrie/dmg-acid2) **pixel-perfectly**, and
+the MonoGame desktop frontend plays ROMs with keyboard input. Also passing:
 the [SingleStepTests sm83](https://github.com/SingleStepTests/sm83) suite
-(500 opcodes × 1000 cases), Blargg `cpu_instrs` (individual + combined),
-`instr_timing`, `mem_timing`, and the Mooneye timer + MBC1/2/5 suites
-(12/13 timer tests; `rapid_toggle` needs fetch/execute overlap — deferred to
-the Phase 6 accuracy pass). See [PLAN.md](PLAN.md) for the roadmap.
+(500 opcodes × 1000 cases), Blargg `cpu_instrs`/`instr_timing`/`mem_timing`,
+and the Mooneye timer, OAM DMA, and MBC1/2/5 suites (12/13 timer tests;
+`rapid_toggle` needs fetch/execute overlap — deferred to the Phase 6 accuracy
+pass). See [PLAN.md](PLAN.md) for the roadmap.
 
 ## Layout
 
 | Project | Purpose |
 |---------|---------|
 | `src/GBEmu.Core` | Emulation core — pure C#, no dependencies |
-| `src/GBEmu.Cli` | Headless runner (currently: ROM header inspector) |
+| `src/GBEmu.Cli` | Headless runner: header dump, serial runner, screenshots |
+| `src/GBEmu.Desktop` | MonoGame frontend — window, keyboard input |
 | `tests/GBEmu.Tests` | xUnit test suite |
-
-A `GBEmu.Desktop` frontend (window, input, audio) arrives in Phase 3 when the PPU
-produces its first pixels.
 
 ## Usage
 
 ```sh
-dotnet run --project src/GBEmu.Cli -- path/to/rom.gb
-```
+# Play a ROM (arrows, Z=A, X=B, Enter=Start, RShift=Select, Esc=quit)
+dotnet run --project src/GBEmu.Desktop -- path/to/rom.gb
 
-Prints the cartridge header: title, mapper, ROM/RAM size, battery, checksums.
+# Inspect a cartridge header
+dotnet run --project src/GBEmu.Cli -- path/to/rom.gb
+
+# Run headless (Blargg-style serial output) / capture a screenshot
+dotnet run --project src/GBEmu.Cli -- path/to/rom.gb --run
+dotnet run --project src/GBEmu.Cli -- path/to/rom.gb --screenshot out.png --frames 300
+```
 
 ## Development
 

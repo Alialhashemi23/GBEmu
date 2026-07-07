@@ -33,6 +33,8 @@ catch (InvalidRomException ex)
 
 if (args.Contains("--run"))
     return RunHeadless(rom, args);
+if (args.Contains("--screenshot"))
+    return Screenshot(rom, args);
 
 Console.WriteLine($"File:            {Path.GetFileName(args[0])} ({rom.Length:N0} bytes)");
 Console.WriteLine($"Title:           {header.Title}");
@@ -90,4 +92,33 @@ static int RunHeadless(byte[] rom, string[] args)
     }
     Console.Error.WriteLine($"\n[no verdict after {total} T-cycles]");
     return 1;
+}
+
+// Runs N frames and writes the framebuffer as a grayscale PNG.
+static int Screenshot(byte[] rom, string[] args)
+{
+    int index = Array.IndexOf(args, "--screenshot");
+    string outPath = index + 1 < args.Length && !args[index + 1].StartsWith("--")
+        ? args[index + 1]
+        : "screenshot.png";
+
+    int frames = 300;
+    int framesIndex = Array.IndexOf(args, "--frames");
+    if (framesIndex >= 0 && framesIndex + 1 < args.Length)
+        frames = int.Parse(args[framesIndex + 1]);
+
+    var gb = new GameBoy(rom);
+    for (int i = 0; i < frames; i++)
+        gb.RunFrame();
+
+    var pixels = new byte[GBEmu.Core.Graphics.Ppu.ScreenWidth * GBEmu.Core.Graphics.Ppu.ScreenHeight];
+    ReadOnlySpan<byte> shades = gb.Ppu.FrameShades;
+    ReadOnlySpan<byte> gray = stackalloc byte[] { 0xFF, 0xAA, 0x55, 0x00 };
+    for (int i = 0; i < pixels.Length; i++)
+        pixels[i] = gray[shades[i]];
+
+    GBEmu.Cli.PngWriter.WriteGrayscale(
+        outPath, GBEmu.Core.Graphics.Ppu.ScreenWidth, GBEmu.Core.Graphics.Ppu.ScreenHeight, pixels);
+    Console.WriteLine($"Wrote {outPath} after {frames} frames.");
+    return 0;
 }

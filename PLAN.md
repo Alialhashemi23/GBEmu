@@ -115,7 +115,7 @@ The SM83 core: 8 registers (AF/BC/DE/HL as pairs), SP, PC, flags Z/N/H/C.
 
 *Milestone: Blargg `instr_timing` passes; Mooneye timer tests mostly pass.*
 
-### Phase 3 — PPU + first pixels (~1 week)
+### Phase 3 — PPU + first pixels (~1 week) — ✅ done (dmg-acid2 pixel-perfect)
 This is where it becomes fun.
 
 - Mode state machine: OAM scan (2) → drawing (3) → HBlank (0) → VBlank (1),

@@ -32,6 +32,12 @@ public class MooneyeTests
     public void Instr_rom_passes(string rom) => AssertPasses(rom);
 
     [MooneyeRomTheory]
+    [InlineData("acceptance/oam_dma/basic.gb")]
+    [InlineData("acceptance/oam_dma/reg_read.gb")]
+    [InlineData("acceptance/oam_dma/sources-GS.gb")]
+    public void Oam_dma_rom_passes(string rom) => AssertPasses(rom);
+
+    [MooneyeRomTheory]
     [InlineData("emulator-only/mbc1/bits_bank1.gb")]
     [InlineData("emulator-only/mbc1/bits_bank2.gb")]
     [InlineData("emulator-only/mbc1/bits_mode.gb")]

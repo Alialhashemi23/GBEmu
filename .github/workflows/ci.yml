@@ -15,11 +15,14 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
+      - name: Install ROM build tools
+        run: sudo apt-get update && sudo apt-get install -y bison libpng-dev
+
       - name: Cache test data
         uses: actions/cache@v4
         with:
           path: tests/data
-          key: test-data-v2 # bump to refetch/rebuild the third-party test suites
+          key: test-data-v3 # bump to refetch/rebuild the third-party test suites
 
       - name: Fetch test data
         run: ./scripts/fetch-test-data.sh
