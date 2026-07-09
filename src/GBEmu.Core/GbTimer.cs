@@ -30,6 +30,9 @@ public sealed class GbTimer
 
     public byte Div => (byte)(_counter >> 8);
 
+    /// <summary>The full internal divider; the APU's frame sequencer taps bit 12.</summary>
+    public ushort DivCounter => _counter;
+
     public byte ReadRegister(ushort address) => address switch
     {
         0xFF04 => Div,

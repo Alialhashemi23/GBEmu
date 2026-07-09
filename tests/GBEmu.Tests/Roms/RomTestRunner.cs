@@ -63,6 +63,45 @@ public static class RomTestRunner
         return $"Failed (serial: {Hex(received)}; text: \"{text}\")";
     }
 
+    /// <summary>
+    /// Blargg memory protocol (dmg_sound, oam_bug): the ROM writes 0x80 to
+    /// 0xA000 while running, the signature DE B0 61 at 0xA001, and replaces
+    /// 0x80 with the result code (0 = pass) when done. Result text is a
+    /// NUL-terminated string at 0xA004.
+    /// </summary>
+    public static string RunBlarggMemory(string romPath, long cycleBudget = 800_000_000)
+    {
+        var gb = new GameBoy(File.ReadAllBytes(romPath));
+
+        long total = 0;
+        long nextCheck = 1_000_000;
+        while (total < cycleBudget)
+        {
+            total += gb.Step();
+            if (total < nextCheck)
+                continue;
+            nextCheck = total + 1_000_000;
+
+            if (gb.Bus.Read(0xA001) != 0xDE || gb.Bus.Read(0xA002) != 0xB0 ||
+                gb.Bus.Read(0xA003) != 0x61)
+                continue;
+            byte status = gb.Bus.Read(0xA000);
+            if (status == 0x80)
+                continue; // still running
+
+            var text = new StringBuilder();
+            for (ushort addr = 0xA004; addr < 0xA200; addr++)
+            {
+                byte b = gb.Bus.Read(addr);
+                if (b == 0)
+                    break;
+                text.Append((char)b);
+            }
+            return status == 0 ? "Passed" : $"Failed (status {status}): {text.ToString().Trim()}";
+        }
+        return $"TIMED OUT after {total} T-cycles";
+    }
+
     private static readonly byte[] FibonacciMarker = { 3, 5, 8, 13, 21, 34 };
     private static readonly byte[] FailMarker = { 0x42, 0x42, 0x42, 0x42, 0x42, 0x42 };
 

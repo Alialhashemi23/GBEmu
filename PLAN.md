@@ -135,7 +135,7 @@ This is where it becomes fun.
 
 *Milestone: Super Mario Land and Link's Awakening playable; Pokémon saves persist.*
 
-### Phase 5 — APU (~1 week)
+### Phase 5 — APU (~1 week) — ✅ done (dmg_sound 12/12; done before Phase 4)
 Most emulators leave this last; sound bugs don't block gameplay.
 
 - Frame sequencer (512 Hz) driving length counters, envelopes, sweep.

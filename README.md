@@ -2,10 +2,12 @@
 
 A Game Boy (DMG) emulator written in C# / .NET 8.
 
-**Status: Phase 3 complete** — the PPU renders
-[dmg-acid2](https://github.com/mattcurrie/dmg-acid2) **pixel-perfectly**, and
-the MonoGame desktop frontend plays ROMs with keyboard input. Also passing:
-the [SingleStepTests sm83](https://github.com/SingleStepTests/sm83) suite
+**Status: Phases 3 + 5 complete** (Phase 4, battery saves, is next) — plays
+real games with sound. The PPU renders
+[dmg-acid2](https://github.com/mattcurrie/dmg-acid2) **pixel-perfectly**, the
+APU passes **all 12** Blargg `dmg_sound` tests, and the MonoGame frontend
+streams audio with audio-driven pacing. Also passing: the
+[SingleStepTests sm83](https://github.com/SingleStepTests/sm83) suite
 (500 opcodes × 1000 cases), Blargg `cpu_instrs`/`instr_timing`/`mem_timing`,
 and the Mooneye timer, OAM DMA, and MBC1/2/5 suites (12/13 timer tests;
 `rapid_toggle` needs fetch/execute overlap — deferred to the Phase 6 accuracy

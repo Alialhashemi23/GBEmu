@@ -16,6 +16,7 @@ if [ ! -d "$data_dir/cpu_instrs" ]; then
     cp -r "$tmp_dir/gb-test-roms/cpu_instrs" "$data_dir/cpu_instrs"
     cp -r "$tmp_dir/gb-test-roms/instr_timing" "$data_dir/instr_timing"
     cp -r "$tmp_dir/gb-test-roms/mem_timing" "$data_dir/mem_timing"
+    cp -r "$tmp_dir/gb-test-roms/dmg_sound" "$data_dir/dmg_sound"
 else
     echo "Blargg ROMs already present."
 fi

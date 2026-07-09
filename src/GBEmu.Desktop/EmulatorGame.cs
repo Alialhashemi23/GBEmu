@@ -1,16 +1,18 @@
 using GBEmu.Core;
+using GBEmu.Core.Audio;
 using GBEmu.Core.Graphics;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
 namespace GBEmu.Desktop;
 
 /// <summary>
-/// MonoGame frontend: runs one emulated frame per Update and blits the
-/// framebuffer to a point-scaled texture. Runs at MonoGame's fixed 60 Hz —
-/// within 0.5% of the DMG's 59.73 Hz; audio-driven pacing replaces this in
-/// Phase 5.
+/// MonoGame frontend. Emulation is paced by the audio stream: each Update
+/// runs frames until a few audio buffers are queued, so the game clock is
+/// slaved to the sound card and audio never starves or drifts. Without an
+/// audio device it falls back to the 60 Hz fixed timestep.
 /// </summary>
 public sealed class EmulatorGame : Game
 {
@@ -39,8 +41,10 @@ public sealed class EmulatorGame : Game
 
     private readonly GameBoy _gameBoy;
     private readonly uint[] _pixels = new uint[Ppu.ScreenWidth * Ppu.ScreenHeight];
+    private readonly short[] _sampleBuffer = new short[8192];
     private SpriteBatch _spriteBatch = null!;
     private Texture2D _screen = null!;
+    private DynamicSoundEffectInstance? _sound;
 
     public EmulatorGame(byte[] rom, string title)
     {
@@ -50,6 +54,7 @@ public sealed class EmulatorGame : Game
         {
             PreferredBackBufferWidth = Ppu.ScreenWidth * Scale,
             PreferredBackBufferHeight = Ppu.ScreenHeight * Scale,
+            SynchronizeWithVerticalRetrace = true,
         };
     }
 
@@ -57,6 +62,17 @@ public sealed class EmulatorGame : Game
     {
         _spriteBatch = new SpriteBatch(GraphicsDevice);
         _screen = new Texture2D(GraphicsDevice, Ppu.ScreenWidth, Ppu.ScreenHeight);
+
+        try
+        {
+            _sound = new DynamicSoundEffectInstance(Apu.SampleRate, AudioChannels.Stereo);
+            _sound.Play();
+            IsFixedTimeStep = false; // the audio queue paces emulation instead
+        }
+        catch (Exception)
+        {
+            _sound = null; // no audio device: stay on the 60 Hz fixed timestep
+        }
     }
 
     protected override void Update(GameTime gameTime)
@@ -68,8 +84,32 @@ public sealed class EmulatorGame : Game
         foreach ((Keys key, GbButton button) in KeyMap)
             _gameBoy.Joypad.SetButton(button, keyboard.IsKeyDown(key));
 
-        _gameBoy.RunFrame();
+        if (_sound is null)
+        {
+            _gameBoy.RunFrame();
+        }
+        else
+        {
+            // Keep ~3 frames of audio queued; the sound card's consumption
+            // rate becomes the emulation clock.
+            int guard = 8;
+            while (_sound.PendingBufferCount < 3 && guard-- > 0)
+            {
+                _gameBoy.RunFrame();
+                SubmitAudio();
+            }
+        }
         base.Update(gameTime);
+    }
+
+    private void SubmitAudio()
+    {
+        int shorts = _gameBoy.Bus.Apu.ReadSamples(_sampleBuffer);
+        if (shorts == 0)
+            return;
+        var bytes = new byte[shorts * 2];
+        Buffer.BlockCopy(_sampleBuffer, 0, bytes, 0, bytes.Length);
+        _sound!.SubmitBuffer(bytes);
     }
 
     protected override void Draw(GameTime gameTime)

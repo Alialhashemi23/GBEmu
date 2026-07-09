@@ -17,6 +17,7 @@ public sealed class MemoryBus : IBus
     public GbTimer Timer { get; } = new();
     public Ppu Ppu { get; } = new();
     public Joypad Joypad { get; } = new();
+    public Audio.Apu Apu { get; } = new();
 
     public byte InterruptFlags = 0xE1; // post-boot value
     public byte InterruptEnable;
@@ -51,6 +52,8 @@ public sealed class MemoryBus : IBus
         Ppu.Tick(tCycles);
         InterruptFlags |= Ppu.PendingInterrupts;
         Ppu.PendingInterrupts = 0;
+
+        Apu.Tick(tCycles, Timer.DivCounter);
 
         if (Joypad.InterruptRequested)
         {
@@ -131,6 +134,7 @@ public sealed class MemoryBus : IBus
         0xFF02 => 0x7E,
         >= 0xFF04 and <= 0xFF07 => Timer.ReadRegister(address),
         0xFF0F => (byte)(InterruptFlags | 0xE0),
+        >= 0xFF10 and <= 0xFF3F => Apu.ReadRegister(address),
         0xFF46 => _dmaRegister,
         >= 0xFF40 and <= 0xFF4B => Ppu.ReadRegister(address),
         _ => _ioStore[address - 0xFF00],
@@ -159,6 +163,9 @@ public sealed class MemoryBus : IBus
                 break;
             case 0xFF0F:
                 InterruptFlags = (byte)(value & 0x1F);
+                break;
+            case >= 0xFF10 and <= 0xFF3F:
+                Apu.WriteRegister(address, value);
                 break;
             case 0xFF46:
                 _dmaRegister = value;

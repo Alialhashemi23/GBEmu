@@ -22,7 +22,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: tests/data
-          key: test-data-v3 # bump to refetch/rebuild the third-party test suites
+          key: test-data-v4 # bump to refetch/rebuild the third-party test suites
 
       - name: Fetch test data
         run: ./scripts/fetch-test-data.sh
